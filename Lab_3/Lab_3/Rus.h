@@ -22,8 +22,8 @@
 //--------------------
 //    ВВОД ВЫВОД
 //--------------------
-#define print(format, ...) wprintf(L##format, __VA_ARGS__)  // меняет сигнатуру wprintf(L"Ввод: %ls\n", string); на print("Ввод: %ls\n", string)
-#define input(format, ...) _input(L##format, __VA_ARGS__)
+#define print(format, ...) wprintf(L##format, ##__VA_ARGS__)  // меняет сигнатуру wprintf(L"Ввод: %ls\n", string); на print("Ввод: %ls\n", string)
+#define input(format, ...) _input(L##format, ##__VA_ARGS__)
 
 // включает русский язык
 void EnableRu()
@@ -68,6 +68,13 @@ int _input(const wchar_t* format, ...)
     }
 
     return 0;
+}
+
+// очистка буфера
+void ClearBuffer()
+{
+    int c;
+    while ((c = getwchar()) != '\n' && c != EOF);
 }
 
 #endif // !RUS_H
