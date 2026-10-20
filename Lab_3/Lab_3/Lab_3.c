@@ -34,6 +34,17 @@ wchar_t* formatDate(struct date* date)
     return buffer;
 }
 
+int isValidDate(struct date* date)
+{
+    int days[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+    if ((date->year < 1) || (date->year > 9999)) return 0;
+    if ((date->month < 1) || (date->month > 12)) return 0;
+    if ((date->day < 1) || (date->day > days[date->month - 1])) return 0;
+
+    return 1;
+}
+
 struct Journal
 {
     int code;               //код
@@ -129,38 +140,49 @@ void addJournalInList()
         {
             if (code == journals[i].code)
             {
+                codeIsset = 1;
+
                 print("Этот код занят, введите другой: ");
 
+                
                 if (input("%d", &code))
+                {
+                    ClearBuffer();
                     break;
-
-                codeIsset = 1;
+                }
 
                 break;
             }
             else if (code == 0)
             {
+                codeIsset = 1;
+
                 print("Код не может быть 0, введите другой: ");
 
                 if (input("%d", &code))
+                {
+                    ClearBuffer();
                     break;
-
-                codeIsset = 1;
+                }
 
                 break;
             }
-            else if (code > 999999)
+            else if (code > 999999 || code < 1)
             {
-                print("Код не может быть больше 999999, введите другой: ");
+                codeIsset = 1;
+
+                print("Код не может быть больше 999999 или меньше 1, введите другой: ");
 
                 if (input("%d", &code))
+                {
+                    ClearBuffer();
                     break;
-
-                codeIsset = 1;
+                }
 
                 break;
             }
         }
+
     } while (codeIsset);
 
     // создание журнала
@@ -171,7 +193,7 @@ void addJournalInList()
     {
         ClearBuffer();
         print("Введите название(50 символов): ");
-        if (input("%49[^\n]", addedJournal.name))
+        if (input("%49l[^\n]", addedJournal.name))
             continue;
 
         break;
@@ -180,9 +202,15 @@ void addJournalInList()
     do
     {
         ClearBuffer();
-        print("Введите дату выпуска(##.##.####): ");
+        print("Введите дату выпуска(## ## ####): ");
         if (input("%d %d %d", &addedJournal.date.day, &addedJournal.date.month, &addedJournal.date.year))
             continue;
+
+        if (!isValidDate(&addedJournal.date))
+        {
+            print("Введена некорректная дата: %d %d %d\n", addedJournal.date.day, addedJournal.date.month, addedJournal.date.year);
+            continue;
+        }
 
         break;
     } while (1);
@@ -191,7 +219,7 @@ void addJournalInList()
     {
         ClearBuffer();
         print("Введите издательство(50 символов): ");
-        if (input("%49[^\n]", addedJournal.publisher))
+        if (input("%49l[^\n]", addedJournal.publisher))
             continue;
 
         break;
@@ -204,6 +232,12 @@ void addJournalInList()
         if (input("%d", &addedJournal.pageCount))
             continue;
 
+        if (addedJournal.pageCount < 1)
+        {
+            print("Страниц не может быть меньше 1\n");
+            continue;
+        }
+
         break;
     } while (1);
 
@@ -211,13 +245,15 @@ void addJournalInList()
     {
         ClearBuffer();
         print("Введите ФИО главного редактора(50 символов): ");
-        if (input("%49[^\n]", addedJournal.fullName))
+        if (input("%49l[^\n]", addedJournal.fullName))
             continue;
 
         break;
     } while (1);
 
-    print("Журнал добавлен!");
+    journals[freeIndex] = addedJournal;
+
+    print("Журнал добавлен!\n");
 }
 
 // тип функции условия
@@ -245,17 +281,14 @@ void journalSearch(Condition check, struct Journal* resultOUT, int* counterOUT)
 // проверка издателя
 int fullNameCheck(struct Journal* journal)
 {
-    if (journal->fullName == NULL)
-        return 0;
-
     return !wcscmp(journal->fullName, L"Иванов И.И.") ? 1 : 0;
 }
 
 // проверка по датам c 2015 марта по 2018 марта
 int dateCheck(struct Journal* journal)
 {
-    if ((journal->date.year >= 2015 && journal->date.month >= 3) ||
-        (journal->date.year <= 2018 && journal->date.month <= 3))
+    if ((journal->date.year > 2015 || (journal->date.year == 2015 && journal->date.month >= 3)) &&
+        (journal->date.year < 2018 || (journal->date.year == 2018 && journal->date.month <= 3)))
         return 1;
 
     return 0;
@@ -336,9 +369,8 @@ int main()
             // выключение
             case off:
             {
-                print("Выход");
-                return;
-                break;
+                print("Выход\n");
+                return 0;
             }
             // Добавление нового журнала
             case work1:
@@ -422,7 +454,7 @@ int main()
             }
             default:
             {
-                print("Неверная комманда, ввод: %d\n", pick);
+                print("Неверная команда, ввод: %d\n", pick);
                 break;
             }
         }

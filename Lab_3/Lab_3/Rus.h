@@ -11,13 +11,15 @@
 
 #define _CRT_SECURE_NO_WARNINGS	// для VS, отключает ошибки printf scanf
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <Windows.h>
 #include <locale.h>
 #include <wchar.h>
-
+#include <conio.h>
 #include <fcntl.h>
 #include <io.h>
+#include <stdarg.h>
 
 //--------------------
 //    ВВОД ВЫВОД
@@ -56,15 +58,30 @@ int _input(const wchar_t* format, ...)
     va_end(args);
 
     // проверка прочитанного значения
-    if (result < 0)
-    {
-        wprintf(L"Ошибка: конец файла или ошибка чтения\n");
-        return 1;
-    }
-    else if (result == 0)
+    if (result == 0)
     {
         wprintf(L"Ошибка: данные не соответствуют формату\n");
         return 1;
+    }
+    else if (result < 0)
+    {
+        int atEnd = feof(stdin);
+
+        if (atEnd)
+            wprintf(L"\nКонец входного потока. Завершение работы.\n");
+        else
+            wprintf(L"\nОшибка чтения входного потока. Завершение работы.\n");
+
+        // если флаг EOF уже есть то другие функции не будут продолжать ввод
+        if (_isatty(_fileno(stdin)))
+        {
+            wprintf(L"\nДля продолжения нажмите любую клавишу...");
+            fflush(stdout);
+            _getch();           // ждёт ровно одну клавишу, Enter не нужен, EOF не мешает
+        }
+
+        fflush(stdout);                             // чтобы текст точно вышел до выхода
+        exit(atEnd ? EXIT_SUCCESS : EXIT_FAILURE);
     }
 
     return 0;
@@ -74,7 +91,7 @@ int _input(const wchar_t* format, ...)
 void ClearBuffer()
 {
     int c;
-    while ((c = getwchar()) != '\n' && c != EOF);
+    while ((c = getwchar()) != '\n' && c != WEOF);
 }
 
 #endif // !RUS_H
